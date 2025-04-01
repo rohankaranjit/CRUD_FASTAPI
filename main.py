@@ -11,6 +11,24 @@ class UserCreate(BaseModel):
     email : str
     password : str
 
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
+# Enable CORS to allow frontend requests
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],  
+    allow_headers=["*"], 
+)
+
+@app.get("/")  
+def home():
+    return {"message": "FastAPI is running"}
+
 @app.post("/users/")
 def create_user(user : UserCreate , db :Session = Depends (get_db)):
     new_user = User(name = user.name , email = user.email , password = user.password)
@@ -46,6 +64,7 @@ def update_user(user_id: int, user: UserCreate, db: Session = Depends(get_db)):
     db.refresh(db_user)
     return db_user
 
-@app.get("/")
-def read_root():
-    return {"message": "FastAPI is working!"}
+@app.get("/users/{user_id}")
+def display_user(user_id: int, db: Session = Depends(get_db)):
+    db_user = db.query(User).filter(User.id == user_id).first()
+    return db_user
