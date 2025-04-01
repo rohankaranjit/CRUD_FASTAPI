@@ -8,7 +8,7 @@
         body {
             font-family: Arial, sans-serif;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
             height: 100vh;
             background-color: #f4f4f4;
@@ -19,6 +19,8 @@
             border-radius: 8px;
             box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
             text-align: center;
+            width: 300px;
+            margin-bottom: 20px;
         }
         input, button {
             width: 100%;
@@ -35,33 +37,104 @@
         button:hover {
             background: #218838;
         }
+        #message {
+            color: red;
+            margin-top: 10px;
+        }
+        #users {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+        }
+        #users ul {
+            list-style: none;
+            padding: 0;
+        }
+        #users li {
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+        }
     </style>
 </head>
 <body>
+
+    <!-- Registration Form -->
     <div class="container">
         <h2>Student Registration</h2>
-        <input type="text" id="name" placeholder="Enter your name">
-        <input type="email" id="email" placeholder="Enter your email">
-        <input type="password" id="password" placeholder="Enter your password">
+        <input type="text" id="name" placeholder="Enter your name" required>
+        <input type="email" id="email" placeholder="Enter your email" required>
+        <input type="password" id="password" placeholder="Enter your password" required>
         <button onclick="registerUser()">Register</button>
         <p id="message"></p>
     </div>
 
+    <!-- Display Users -->
+    <div id="users">
+        <h3>Registered Users</h3>
+        <ul id="userList"></ul>
+    </div>
+
     <script>
+        // Function to register a new user
         async function registerUser() {
             const name = document.getElementById('name').value;
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
-            const response = await fetch('http://127.0.0.1:8000/users/', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ name, email, password })
-            });
+            if (!name || !email || !password) {
+                document.getElementById('message').innerText = "All fields are required!";
+                return;
+            }
 
-            const data = await response.json();
-            document.getElementById('message').innerText = data.id ? 'Student registered successfully!' : 'Error registering user';
+            try {
+                const response = await fetch('http://127.0.0.1:8000/users/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password })
+                });
+
+                if (!response.ok) {
+                    throw new Error("Failed to register user");
+                }
+
+                const data = await response.json();
+                document.getElementById('message').style.color = "green";
+                document.getElementById('message').innerText = "Student registered successfully!";
+
+                // Refresh user list after registration
+                fetchUsers();
+            } catch (error) {
+                document.getElementById('message').innerText = "Error: " + error.message;
+            }
         }
+
+        // Function to fetch and display all registered users
+        async function fetchUsers() {
+            try {
+                const response = await fetch('http://127.0.0.1:8000/users/');
+                if (!response.ok) {
+                    throw new Error("Failed to fetch users");
+                }
+
+                const users = await response.json();
+                const userList = document.getElementById('userList');
+                userList.innerHTML = ""; // Clear previous users
+
+                users.forEach(user => {
+                    const li = document.createElement('li');
+                    li.textContent = `${user.name} (${user.email})`;
+                    userList.appendChild(li);
+                });
+            } catch (error) {
+                console.error("Error fetching users:", error);
+            }
+        }
+
+        // Load users when page loads
+        window.onload = fetchUsers;
     </script>
+
 </body>
 </html>
